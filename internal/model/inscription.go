@@ -6,3 +6,5 @@ type Inscription struct {
 	Event primitive.ObjectID `bson:"event" json:"event"`
 	User  primitive.ObjectID `bson:"user" json:"user"`
 }
+
+type Inscriptions []*Inscription

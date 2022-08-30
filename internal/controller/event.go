@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"main/internal/model"
-	eventRepository "main/internal/repository"
+	eventRepository "main/internal/repository/event"
 )
 
 func Events(c *gin.Context) {

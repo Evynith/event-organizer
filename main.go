@@ -22,6 +22,11 @@ func main() {
 			private.PUT(":id", controller.PutEvent)
 		}
 
+		inscription := public.Group("inscription")
+		inscription.Use()
+		{
+			inscription.POST("", controller.PostInscription) //only after date
+		}
 	}
 
 	router.Run("localhost:8080")
