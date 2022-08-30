@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"main/internal/model"
 	eventRepository "main/internal/repository/event"
@@ -34,12 +35,13 @@ func PostEvent(c *gin.Context) {
 		return
 	}
 
-	err := eventRepository.Create(newEvent)
+	result, err := eventRepository.Create(newEvent)
 
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
+	newEvent.ID = result.(primitive.ObjectID)
 	c.IndentedJSON(http.StatusCreated, newEvent)
 }
 

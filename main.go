@@ -25,7 +25,7 @@ func main() {
 		inscription := public.Group("inscription")
 		inscription.Use()
 		{
-			inscription.POST("", controller.PostInscription) //only after date
+			inscription.POST("", controller.PostInscription)
 		}
 	}
 

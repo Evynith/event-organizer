@@ -13,13 +13,13 @@ import (
 var collection = database.GetCollection("event")
 var ctx = context.Background()
 
-func Create(event model.Event) error {
+func Create(event model.Event) (interface{}, error) {
 	var err error
-	_, err = collection.InsertOne(ctx, event)
+	result, err := collection.InsertOne(ctx, event)
 	if err != nil {
-		return err
+		return model.Event{}, err
 	}
-	return nil
+	return result.InsertedID, nil
 }
 
 func Read() (model.Events, error) {
@@ -49,9 +49,9 @@ func ReadOne(eventId string) (model.Event, error) {
 	filter := bson.M{"_id": oid}
 
 	var result model.Event
-	event := collection.FindOne(ctx, filter).Decode(&result)
+	err = collection.FindOne(ctx, filter).Decode(&result)
 
-	if event != nil {
+	if err != nil {
 		return model.Event{}, err
 	}
 	return result, nil
@@ -68,7 +68,7 @@ func Update(event model.Event, eventId string) error {
 			"title":             event.Title,
 			"description_small": event.Description_small,
 			"description_large": event.Description_large,
-			"date":              event.Date,
+			"date":              event.DateOfEvent,
 			"Organizer":         event.Organizer,
 			"Place":             event.Place,
 			"Status":            event.Status,
