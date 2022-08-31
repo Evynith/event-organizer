@@ -38,3 +38,8 @@ db.users.insertMany([
         roles: ["readWrite",],
     })
 ```
+```sh
+    db.event.createIndex({
+        title: "text"
+    })
+```

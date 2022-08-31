@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"main/internal/database"
 	model "main/internal/model"
@@ -22,8 +24,49 @@ func Create(event model.Event) (interface{}, error) {
 	return result.InsertedID, nil
 }
 
-func Read() (model.Events, error) {
+func filterEvent(title string, date1 string, date2 string, state string) bson.M {
 	filter := bson.M{}
+	nDate1, _ := time.Parse("2006-01-02", date1)
+	nDate2, _ := time.Parse("2006-01-02", date2)
+	nDate2 = nDate2.Add(24 * time.Hour)
+
+	date1Time := primitive.NewDateTimeFromTime(nDate1)
+	date2Time := primitive.NewDateTimeFromTime(nDate2)
+
+	if title != "" {
+		newSearch := bson.M{
+			"$search": title,
+		}
+		filter["$text"] = newSearch
+	}
+	if state == "published" {
+		filter["state"] = true
+	} else if state == "eraser" {
+		filter["state"] = false
+	}
+	if date1 != "" && date2 != "" {
+		newSearch := bson.M{
+			"$gte": date1Time,
+			"$lte": date2Time,
+		}
+		filter["date"] = newSearch
+	} else if date1 != "" && date2 == "" {
+		newSearch := bson.M{
+			"$gte": date1Time,
+		}
+		filter["date"] = newSearch
+	} else if date1 == "" && date2 != "" {
+		newSearch := bson.M{
+			"$lte": date2Time,
+		}
+		filter["date"] = newSearch
+	}
+	fmt.Println(filter)
+	return filter
+}
+
+func Read(title string, date1 string, date2 string, state string) (model.Events, error) {
+	filter := filterEvent(title, date1, date2, state)
 	elems, err := collection.Find(ctx, filter)
 	var events model.Events
 	if err != nil {

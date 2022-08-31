@@ -25,7 +25,7 @@ func main() {
 	var middle middleware.JWTmiddleware = middleware.JWTServiceMiddleware("admin")
 
 	public := router.Group("/events")
-	public.Use(middle.AuthorizeJWT())
+	public.Use(middle.AuthorizeJWT()) //eraser only admin
 	{
 		public.GET("", controller.Events)
 		public.GET(":id", controller.Event)

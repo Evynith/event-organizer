@@ -11,7 +11,12 @@ import (
 )
 
 func Events(c *gin.Context) {
-	usuarios, err := eventRepository.Read()
+	title, _ := c.GetQuery("title")
+	date1, _ := c.GetQuery("since")
+	date2, _ := c.GetQuery("until")
+	state, _ := c.GetQuery("state")
+
+	usuarios, err := eventRepository.Read(title, date1, date2, state)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
