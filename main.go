@@ -2,9 +2,8 @@ package main
 
 import (
 	"main/internal/controller"
+	"main/internal/middleware"
 	"net/http"
-
-	authHandler "main/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,14 +21,16 @@ func main() {
 			ctx.JSON(http.StatusUnauthorized, nil)
 		}
 	})
-	var typeUser string = "admin"
+
+	var middle middleware.JWTmiddleware = middleware.JWTServiceMiddleware("admin")
+
 	public := router.Group("/events")
-	public.Use(authHandler.AuthorizeJWT())
+	public.Use(middle.AuthorizeJWT())
 	{
 		public.GET("", controller.Events)
 		public.GET(":id", controller.Event)
 		private := public.Group("")
-		private.Use(authHandler.OnlyAdmin(typeUser))
+		private.Use(middle.OnlyUser())
 		{
 			private.POST("", controller.PostEvent)
 			private.DELETE(":id", controller.DeleteEvent)

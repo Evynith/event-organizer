@@ -4,8 +4,8 @@ import (
 	auth "main/internal/repository/auth"
 )
 
-func LoginUser(email string, password string) bool {
-	user, err := auth.SearchUser(email)
+func LoginUser(username string, password string) bool {
+	user, err := auth.SearchUser(username)
 
 	if err != nil {
 		return false
