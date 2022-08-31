@@ -6,6 +6,7 @@ import (
 	model "main/internal/model"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var collection = database.GetCollection("inscription")
@@ -20,8 +21,8 @@ func Create(inscription model.Inscription) error {
 	return nil
 }
 
-func Read() (model.Inscriptions, error) {
-	filter := bson.M{}
+func Read(idUser primitive.ObjectID) (model.Inscriptions, error) {
+	filter := bson.M{"user": idUser}
 	elems, err := collection.Find(ctx, filter)
 	var inscriptions model.Inscriptions
 	if err != nil {

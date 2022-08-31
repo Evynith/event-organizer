@@ -16,7 +16,7 @@ func Events(c *gin.Context) {
 	date2, _ := c.GetQuery("until")
 	state, _ := c.GetQuery("state")
 
-	usuarios, err := eventRepository.Read(title, date1, date2, state)
+	usuarios, err := eventRepository.Read(title, date1, date2, state, []primitive.ObjectID{})
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return

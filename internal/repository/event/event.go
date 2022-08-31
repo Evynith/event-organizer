@@ -24,7 +24,7 @@ func Create(event model.Event) (interface{}, error) {
 	return result.InsertedID, nil
 }
 
-func filterEvent(title string, date1 string, date2 string, state string) bson.M {
+func filterEvent(title string, date1 string, date2 string, state string, ids []primitive.ObjectID) bson.M {
 	filter := bson.M{}
 	nDate1, _ := time.Parse("2006-01-02", date1)
 	nDate2, _ := time.Parse("2006-01-02", date2)
@@ -38,6 +38,12 @@ func filterEvent(title string, date1 string, date2 string, state string) bson.M 
 			"$search": title,
 		}
 		filter["$text"] = newSearch
+	}
+	if len(ids) > 0 {
+		newSearch := bson.M{
+			"$in": ids,
+		}
+		filter["_id"] = newSearch
 	}
 	if state == "published" {
 		filter["state"] = true
@@ -65,8 +71,8 @@ func filterEvent(title string, date1 string, date2 string, state string) bson.M 
 	return filter
 }
 
-func Read(title string, date1 string, date2 string, state string) (model.Events, error) {
-	filter := filterEvent(title, date1, date2, state)
+func Read(title string, date1 string, date2 string, state string, user []primitive.ObjectID) (model.Events, error) {
+	filter := filterEvent(title, date1, date2, state, user)
 	elems, err := collection.Find(ctx, filter)
 	var events model.Events
 	if err != nil {

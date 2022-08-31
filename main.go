@@ -41,8 +41,10 @@ func main() {
 		inscription.Use()
 		{
 			inscription.POST("", controller.PostInscription)
+			inscription.GET("", controller.Inscriptions)
 		}
 	}
+	//TODO: create 404
 
 	router.Run("localhost:8080")
 }

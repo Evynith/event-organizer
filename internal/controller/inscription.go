@@ -35,3 +35,33 @@ func PostInscription(c *gin.Context) {
 	}
 	c.IndentedJSON(http.StatusCreated, newInscription)
 }
+
+func Inscriptions(c *gin.Context) {
+	title, _ := c.GetQuery("title")
+	date1, _ := c.GetQuery("since")
+	date2, _ := c.GetQuery("until")
+	state, _ := c.GetQuery("state")
+
+	var newInscription model.Inscription
+	err := c.BindJSON(&newInscription)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	inscriptions, err := inscriptionRepository.Read(newInscription.User)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	var inscriptionsList []primitive.ObjectID
+	for _, inscriptionID := range inscriptions {
+		inscriptionsList = append(inscriptionsList, inscriptionID.Event)
+	}
+
+	events, err := eventRepository.Read(title, date1, date2, state, inscriptionsList)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	c.IndentedJSON(http.StatusOK, events)
+}
