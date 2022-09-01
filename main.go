@@ -1,7 +1,7 @@
 package main
 
 import (
-	"main/internal/controller"
+	controller "main/internal/controller"
 	"main/internal/middleware"
 	"net/http"
 
@@ -21,30 +21,34 @@ func main() {
 			ctx.JSON(http.StatusUnauthorized, nil)
 		}
 	})
-
 	var middle middleware.JWTmiddleware = middleware.JWTServiceMiddleware("admin")
+	var eController controller.EventControllerInterface = controller.EventControllerStart(middle)
+	var iController controller.InscriptionControllerInterface = controller.InscriptionControllerStart(middle)
 
 	public := router.Group("/events")
-	public.Use(middle.AuthorizeJWT()) //eraser only admin
+	public.Use(middle.AuthorizeJWT())
 	{
-		public.GET("", controller.Events)
-		public.GET(":id", controller.Event)
+		public.GET("", eController.Events)
+		public.GET(":id", eController.Event)
 		private := public.Group("")
 		private.Use(middle.OnlyUser())
 		{
-			private.POST("", controller.PostEvent)
-			private.DELETE(":id", controller.DeleteEvent)
-			private.PUT(":id", controller.PutEvent)
+			private.POST("", eController.PostEvent)
+			private.DELETE(":id", eController.DeleteEvent)
+			private.PUT(":id", eController.PutEvent)
 		}
 
 		inscription := public.Group("inscription")
 		inscription.Use()
 		{
-			inscription.POST("", controller.PostInscription)
-			inscription.GET("", controller.Inscriptions)
+			inscription.POST("", iController.PostInscription)
+			inscription.GET("", iController.Inscriptions)
 		}
 	}
-	//TODO: create 404
+
+	router.NoRoute(func(c *gin.Context) {
+		c.JSON(404, gin.H{"code": "PAGE_NOT_FOUND", "message": "Page not found"})
+	})
 
 	router.Run("localhost:8080")
 }

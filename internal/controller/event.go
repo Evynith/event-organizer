@@ -6,17 +6,40 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
+	mi "main/internal/middleware"
 	"main/internal/model"
 	eventRepository "main/internal/repository/event"
+	"main/internal/service"
 )
 
-func Events(c *gin.Context) {
-	title, _ := c.GetQuery("title")
-	date1, _ := c.GetQuery("since")
-	date2, _ := c.GetQuery("until")
-	state, _ := c.GetQuery("state")
+type EventControllerInterface interface {
+	Events(c *gin.Context)
+	Event(c *gin.Context)
+	PostEvent(c *gin.Context)
+	DeleteEvent(c *gin.Context)
+	PutEvent(c *gin.Context)
+}
 
-	usuarios, err := eventRepository.Read(title, date1, date2, state, []primitive.ObjectID{})
+type eventController struct {
+	middle mi.JWTmiddleware
+}
+
+func EventControllerStart(j mi.JWTmiddleware) EventControllerInterface {
+	return &eventController{
+		middle: j,
+	}
+}
+
+func (e *eventController) Events(c *gin.Context) {
+	var newFilter model.Filter
+	if err := c.BindQuery(&newFilter); err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	access := service.AccessDraft(e.middle.GetType())
+	filter := service.CreateFilterEvents(newFilter, []primitive.ObjectID{}, access)
+
+	usuarios, err := eventRepository.Read(filter)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -24,9 +47,11 @@ func Events(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, usuarios)
 }
 
-func Event(c *gin.Context) {
+func (e *eventController) Event(c *gin.Context) {
 	id := c.Param("id")
-	user, err := eventRepository.ReadOne(id)
+	access := service.AccessDraft(e.middle.GetType())
+	idOld := service.CreateFilterEvent(id, access)
+	user, err := eventRepository.ReadOne(idOld)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -34,7 +59,7 @@ func Event(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, user)
 }
 
-func PostEvent(c *gin.Context) {
+func (e *eventController) PostEvent(c *gin.Context) {
 	var newEvent model.Event
 	if err := c.BindJSON(&newEvent); err != nil {
 		return
@@ -50,9 +75,10 @@ func PostEvent(c *gin.Context) {
 	c.IndentedJSON(http.StatusCreated, newEvent)
 }
 
-func DeleteEvent(c *gin.Context) {
+func (e *eventController) DeleteEvent(c *gin.Context) {
 	id := c.Param("id")
-	err := eventRepository.Delete(id)
+	idOld := service.CreateFilterID(id)
+	err := eventRepository.Delete(idOld)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -60,13 +86,15 @@ func DeleteEvent(c *gin.Context) {
 	c.Status(200)
 }
 
-func PutEvent(c *gin.Context) {
+func (e *eventController) PutEvent(c *gin.Context) {
 	id := c.Param("id")
 	var newEvent model.Event
 	if err := c.BindJSON(&newEvent); err != nil {
 		return
 	}
-	err := eventRepository.Update(newEvent, id)
+	data := service.CreateEventUpdate(newEvent)
+	idOld := service.CreateFilterID(id)
+	err := eventRepository.Update(data, idOld)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return

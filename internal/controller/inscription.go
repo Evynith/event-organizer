@@ -2,9 +2,11 @@ package controller
 
 import (
 	"errors"
+	mi "main/internal/middleware"
 	"main/internal/model"
 	eventRepository "main/internal/repository/event"
 	inscriptionRepository "main/internal/repository/inscription"
+	"main/internal/service"
 	"net/http"
 	"time"
 
@@ -12,11 +14,28 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func PostInscription(c *gin.Context) {
+type InscriptionControllerInterface interface {
+	PostInscription(c *gin.Context)
+	Inscriptions(c *gin.Context)
+}
+
+type inscriptionController struct {
+	middle mi.JWTmiddleware
+}
+
+func InscriptionControllerStart(j mi.JWTmiddleware) InscriptionControllerInterface {
+	return &inscriptionController{
+		middle: j,
+	}
+}
+
+func (i *inscriptionController) PostInscription(c *gin.Context) {
 	var newInscription model.Inscription
 	err := c.BindJSON(&newInscription)
 	idEvent := newInscription.Event.Hex()
-	event, err := eventRepository.ReadOne(idEvent)
+	access := service.AccessDraft(i.middle.GetType())
+	idOld := service.CreateFilterEvent(idEvent, access)
+	event, err := eventRepository.ReadOne(idOld)
 
 	if event.DateOfEvent < primitive.NewDateTimeFromTime(time.Now()) {
 		c.AbortWithError(http.StatusNotAcceptable, errors.New("This event as been finalized"))
@@ -36,11 +55,14 @@ func PostInscription(c *gin.Context) {
 	c.IndentedJSON(http.StatusCreated, newInscription)
 }
 
-func Inscriptions(c *gin.Context) {
-	title, _ := c.GetQuery("title")
-	date1, _ := c.GetQuery("since")
-	date2, _ := c.GetQuery("until")
-	state, _ := c.GetQuery("state")
+func (i *inscriptionController) Inscriptions(c *gin.Context) {
+	var newFilter model.Filter
+	if err := c.BindQuery(&newFilter); err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	access := service.AccessDraft(i.middle.GetType())
+	filter := service.CreateFilterEvents(newFilter, []primitive.ObjectID{}, access)
 
 	var newInscription model.Inscription
 	err := c.BindJSON(&newInscription)
@@ -58,7 +80,7 @@ func Inscriptions(c *gin.Context) {
 		inscriptionsList = append(inscriptionsList, inscriptionID.Event)
 	}
 
-	events, err := eventRepository.Read(title, date1, date2, state, inscriptionsList)
+	events, err := eventRepository.Read(filter)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return

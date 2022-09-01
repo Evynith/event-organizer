@@ -12,16 +12,23 @@ import (
 type JWTmiddleware interface {
 	AuthorizeJWT() gin.HandlerFunc
 	OnlyUser() gin.HandlerFunc
+	GetType() string
 }
 type jwtServices struct {
-	typeUser string
-	token    string
+	espectedUser string
+	typeUser     string
+	token        string
 }
 
-func JWTServiceMiddleware(typeU string) JWTmiddleware {
+func (middleware *jwtServices) GetType() string {
+	return middleware.typeUser
+}
+
+func JWTServiceMiddleware(espected string) JWTmiddleware {
 	return &jwtServices{
-		typeUser: typeU,
-		token:    "",
+		espectedUser: espected,
+		token:        "",
+		typeUser:     "",
 	}
 }
 
@@ -32,6 +39,7 @@ func (middleware *jwtServices) AuthorizeJWT() gin.HandlerFunc {
 		tokenString := authHeader[len(BEARER_SCHEMA):]
 		middleware.token = tokenString
 		token, err := service.JWTAuthService().ValidateToken(middleware.token)
+		middleware.typeUser = service.JWTAuthService().TypeUser(middleware.token)
 		if err != nil {
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
@@ -54,7 +62,7 @@ func (middleware *jwtServices) AuthorizeJWT() gin.HandlerFunc {
 
 func (middleware *jwtServices) OnlyUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if service.JWTAuthService().ValidateUser(middleware.token, middleware.typeUser) == true {
+		if middleware.espectedUser == middleware.typeUser {
 			c.Next()
 		} else {
 			c.AbortWithStatus(http.StatusUnauthorized)
