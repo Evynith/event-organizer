@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"fmt"
 	service "main/internal/service"
 	"net/http"
 
@@ -18,6 +17,7 @@ type jwtServices struct {
 	espectedUser string
 	typeUser     string
 	token        string
+	id           string
 }
 
 func (middleware *jwtServices) GetType() string {
@@ -29,6 +29,7 @@ func JWTServiceMiddleware(espected string) JWTmiddleware {
 		espectedUser: espected,
 		token:        "",
 		typeUser:     "",
+		id:           "",
 	}
 }
 
@@ -39,13 +40,12 @@ func (middleware *jwtServices) AuthorizeJWT() gin.HandlerFunc {
 		tokenString := authHeader[len(BEARER_SCHEMA):]
 		middleware.token = tokenString
 		token, err := service.JWTAuthService().ValidateToken(middleware.token)
-		middleware.typeUser = service.JWTAuthService().TypeUser(middleware.token)
+		middleware.typeUser, middleware.id = service.JWTAuthService().TypeUser(middleware.token)
 		if err != nil {
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
-		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-			fmt.Print(claims)
+		if _, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 			if service.ExistsToken(middleware.token) {
 				c.Next()
 			} else {

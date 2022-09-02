@@ -14,11 +14,12 @@ import (
 type JWTService interface {
 	GenerateToken(email string) string
 	ValidateToken(token string) (*jwt.Token, error)
-	TypeUser(encodedToken string) string
+	TypeUser(encodedToken string) (string, string)
 }
 type authCustomClaims struct {
 	Name string `json:"name"`
 	User string `json:"user"`
+	Id   string `json:"id"`
 	jwt.StandardClaims
 }
 
@@ -43,11 +44,12 @@ func getSecretKey() string {
 	return secret
 }
 
-func (service *jwtServices) GenerateToken(email string) string {
-	user := TypeUser(email)
+func (service *jwtServices) GenerateToken(username string) string {
+	user, id := DataUser(username)
 	claims := &authCustomClaims{
-		email,
+		username,
 		user,
+		id,
 		jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(time.Hour * 48).Unix(),
 			Issuer:    service.issure,
@@ -75,14 +77,14 @@ func (service *jwtServices) ValidateToken(encodedToken string) (*jwt.Token, erro
 
 }
 
-func (service *jwtServices) TypeUser(encodedToken string) string {
+func (service *jwtServices) TypeUser(encodedToken string) (string, string) {
 	token, err := service.ValidateToken(encodedToken)
 	if err != nil {
-		return ""
+		return "", ""
 	} else {
 		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-			return claims["user"].(string)
+			return claims["user"].(string), claims["id"].(string)
 		}
 	}
-	return ""
+	return "", ""
 }

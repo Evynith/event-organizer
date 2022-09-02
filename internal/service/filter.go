@@ -20,6 +20,16 @@ func CreateFilterID(id string) bson.M {
 	return bson.M{"_id": oid}
 }
 
+func CreateFilterListOfEvent(filter bson.M, inscriptionsList []primitive.ObjectID) bson.M {
+	if len(inscriptionsList) > 0 {
+		newSearch := bson.M{
+			"$in": inscriptionsList,
+		}
+		filter["_id"] = newSearch
+	}
+	return filter
+}
+
 func CreateEventUpdate(event model.Event) bson.M {
 	update := bson.M{
 		"$set": bson.M{
@@ -58,12 +68,6 @@ func CreateFilterEvents(filter model.Filter, ids []primitive.ObjectID, draft boo
 		}
 		fltr["$text"] = newSearch
 	}
-	if len(ids) > 0 {
-		newSearch := bson.M{
-			"$in": ids,
-		}
-		fltr["_id"] = newSearch
-	}
 	if draft {
 		if filter.Status == "published" {
 			fltr["status"] = true
@@ -91,5 +95,6 @@ func CreateFilterEvents(filter model.Filter, ids []primitive.ObjectID, draft boo
 		}
 		fltr["date"] = newSearch
 	}
+	fltr = CreateFilterListOfEvent(fltr, ids)
 	return fltr
 }

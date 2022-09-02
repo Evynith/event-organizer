@@ -7,4 +7,8 @@ type Inscription struct {
 	User  primitive.ObjectID `bson:"user" json:"user"`
 }
 
+type OnlyUser struct {
+	User primitive.ObjectID `bson:"user" json:"user"`
+}
+
 type Inscriptions []*Inscription

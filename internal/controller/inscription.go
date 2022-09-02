@@ -80,6 +80,8 @@ func (i *inscriptionController) Inscriptions(c *gin.Context) {
 		inscriptionsList = append(inscriptionsList, inscriptionID.Event)
 	}
 
+	filter = service.CreateFilterListOfEvent(filter, inscriptionsList)
+
 	events, err := eventRepository.Read(filter)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
