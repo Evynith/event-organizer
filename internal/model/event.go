@@ -12,7 +12,7 @@ type Event struct {
 	DateOfEvent       primitive.DateTime `bson:"date" json:"date"`
 	Organizer         primitive.ObjectID `bson:"organizer,omitempty" json:"organizer,omitempty"`
 	Place             string             `json:"place"`
-	Status            bool               `json:"status"` //0 eraser, 1 published
+	Status            bool               `json:"status"`
 }
 
 type Events []*Event

@@ -13,17 +13,14 @@ func SetupRouter() *gin.Engine {
 
 	router.POST("/login", func(ctx *gin.Context) {
 		token := controller.Login(ctx)
+
 		if token != "" {
 			ctx.JSON(http.StatusOK, gin.H{
 				"token": token,
 			})
 		} else {
-			ctx.JSON(http.StatusUnauthorized, nil)
+			ctx.JSON(http.StatusUnauthorized, "No se pudo crear acceso")
 		}
-	})
-
-	router.GET("/ping", func(c *gin.Context) {
-		c.String(http.StatusOK, "pong")
 	})
 
 	var middle middleware.JWTmiddleware = middleware.JWTServiceMiddleware("admin")
