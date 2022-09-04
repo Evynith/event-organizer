@@ -1,34 +1,39 @@
 version: "3.9"
 services:
   server:
+    container_name: event_server
     build: 
       context: .
       dockerfile: Dockerfile
     ports:
       - 8000:8000
     volumes:
-      - .:/app
+      - .:/go/src/app
     depends_on:
-      - mongodb
+      - mongo
 
-  mongodb:
+  mongo:
     image: mongo:6.0.1
     container_name: mongodb
     restart: always
     build: ./mongodb
+    hostname: localhost
     ports:
       - 27000:27017
     volumes:
       - ./mongodb/database:/data/db
       - ./mongodb/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     environment:
+      - MONGODB_SERVER=localhost
       - MONGODB_PORT=27017
       - MONGO_INITDB_DATABASE=organization
       - MONGO_INITDB_ROOT_USERNAME=root
       - MONGO_INITDB_ROOT_PASSWORD=root
     command: mongod
+
 # docker-compose build
 # docker run -p 8000:8000 event-organizer_server
-# docker-compose up -d
+# docker-compose up -d --build
 # sudo docker exec -it mongodb mongosh organization
 # mongosh
+# docker rmi -f $(docker images -aq)

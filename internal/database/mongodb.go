@@ -12,10 +12,12 @@ import (
 var (
 	usr      = "one"
 	pwd      = "pass"
-	host     = "localhost"
+	host     = "mongo"
 	port     = 27017
 	database = "organization"
 )
+
+//"mongodb://root:root@mongo:27017/"
 
 func GetCollection(collection string) *mongo.Collection {
 	uri := fmt.Sprintf("mongodb://%s:%s@%s:%d/%s", usr, pwd, host, port, database)
