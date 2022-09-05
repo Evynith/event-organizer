@@ -12,6 +12,10 @@ import (
 func SetupRouter() *gin.Engine {
 	router := gin.Default()
 
+	router.GET("", func(ctx *gin.Context) {
+		ctx.JSON(http.StatusOK, gin.H{"message": "Welcome to API event-organizer"})
+	})
+
 	router.POST("/login", func(ctx *gin.Context) {
 		token := controller.Login(ctx)
 
@@ -50,7 +54,7 @@ func SetupRouter() *gin.Engine {
 	}
 
 	router.NoRoute(func(c *gin.Context) {
-		c.JSON(404, gin.H{"code": "PAGE_NOT_FOUND", "message": "Page not found"})
+		c.JSON(http.StatusNotFound, gin.H{"message": "Page not found"})
 	})
 	return router
 }

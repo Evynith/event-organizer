@@ -17,6 +17,19 @@ import (
 var tokens []string //0 user, 1 admin
 var events []string //0 past, 1 future
 
+func TestInit(t *testing.T) {
+	router := SetupRouter()
+	message := "Welcome to API event-organizer"
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodGet, "/", nil)
+	router.ServeHTTP(w, req)
+	messageIn, _ := searchElemInBody(w.Body.String(), "message")
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, message, messageIn)
+}
+
 func TestLogin(t *testing.T) {
 	type caseStruct struct {
 		Username string
@@ -224,6 +237,19 @@ func TestGetInscription(t *testing.T) {
 
 		assert.Equal(t, testData.Status, w.Code)
 	}
+}
+
+func TestNotFound(t *testing.T) {
+	router := SetupRouter()
+	message := "Page not found"
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodGet, "/admin", nil)
+	router.ServeHTTP(w, req)
+	messageIn, _ := searchElemInBody(w.Body.String(), "message")
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+	assert.Equal(t, message, messageIn)
 }
 
 func createJsonEvent(dateString string) (bytes.Buffer, error) {
