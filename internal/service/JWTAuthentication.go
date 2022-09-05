@@ -10,11 +10,10 @@ import (
 
 //using HMAC!!!
 
-// jwt service
 type JWTService interface {
-	GenerateToken(email string) string
+	GenerateToken(username string) string
 	ValidateToken(token string) (*jwt.Token, error)
-	TypeUser(encodedToken string) (string, string)
+	TypeUser(parseToken *jwt.Token) (string, string)
 }
 type authCustomClaims struct {
 	Name string `json:"name"`
@@ -28,7 +27,6 @@ type jwtServices struct {
 	issure    string
 }
 
-// auth-jwt
 func JWTAuthService() JWTService {
 	return &jwtServices{
 		secretKey: getSecretKey(),
@@ -44,6 +42,10 @@ func getSecretKey() string {
 	return secret
 }
 
+/*
+Recibe un nombre de usuario que usará para buscar el resto de datos y generar un token a base de dichos datos
+por un tiempo limitado de 48hs
+*/
 func (service *jwtServices) GenerateToken(username string) string {
 	user, id := DataUser(username)
 	claims := &authCustomClaims{
@@ -58,14 +60,17 @@ func (service *jwtServices) GenerateToken(username string) string {
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	//encoded string
-	t, err := token.SignedString([]byte(service.secretKey))
+	t, err := token.SignedString([]byte(service.secretKey)) //encoded string
 	if err != nil {
 		panic(err)
 	}
 	return t
 }
 
+/*
+Revisa que el token recibido tenga la estructura correcta a través de su decodificación y sea válido según sus claims de creación,
+luego verifica que se  corresponde  con la firma de creación guardada en el servicio. Devuelve el token parseado según dichas claims
+*/
 func (service *jwtServices) ValidateToken(encodedToken string) (*jwt.Token, error) {
 	return jwt.Parse(encodedToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -77,14 +82,12 @@ func (service *jwtServices) ValidateToken(encodedToken string) (*jwt.Token, erro
 
 }
 
-func (service *jwtServices) TypeUser(encodedToken string) (string, string) {
-	token, err := service.ValidateToken(encodedToken)
-	if err != nil {
-		return "", ""
-	} else {
-		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-			return claims["user"].(string), claims["id"].(string)
-		}
+/*
+Recibe un token validado y parseado del que retorna el contenido asociado a las claims de "user" y de "id"
+*/
+func (service *jwtServices) TypeUser(parseToken *jwt.Token) (string, string) {
+	if claims, ok := parseToken.Claims.(jwt.MapClaims); ok {
+		return claims["user"].(string), claims["id"].(string)
 	}
 	return "", ""
 }

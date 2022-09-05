@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"main/internal/database"
 	"main/internal/model"
@@ -40,14 +41,18 @@ func PersistToken(username string, token string) error {
 	return nil
 }
 
-func ExistsToken(token string) bool {
+/*
+Recibe un token codificado, usuario asociado y revisa en la base de datos si ha sido guardado anteriormente para dicho usuario
+*/
+func ExistsToken(token string, idUser string) bool {
 	var err error
-	filter := bson.M{"token": token}
+	oid, _ := primitive.ObjectIDFromHex(idUser)
+	filter := bson.M{"token": token, "_id": oid}
 
 	var result model.User
 	err = collection.FindOne(ctx, filter).Decode(&result)
 
-	if err != nil {
+	if err != nil || result.Username == "" {
 		return false
 	}
 	return true

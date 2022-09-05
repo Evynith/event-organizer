@@ -6,6 +6,9 @@ import (
 	service "main/internal/service"
 )
 
+/*
+Si existe el usuario y contraseñas recibidas por cabecera devuelve un token
+*/
 func Login(ctx *gin.Context) string {
 	var jwtService service.JWTService = service.JWTAuthService()
 	var token string = ""

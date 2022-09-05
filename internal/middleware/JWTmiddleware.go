@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v4"
 
 	service "main/internal/service"
 )
@@ -34,6 +33,10 @@ func JWTServiceMiddleware(espected string) JWTmiddleware {
 	}
 }
 
+/*
+Obtiene de la cabecera de la petición el token recibido y a través de él el tipo de usuario y su id.
+Revisa que el token sea válido y, de serlo, que haya sido guardado con anterioridad en la base de datos
+*/
 func (middleware *jwtServices) AuthorizeJWT() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		const BEARER_SCHEMA = "Bearer "
@@ -41,14 +44,15 @@ func (middleware *jwtServices) AuthorizeJWT() gin.HandlerFunc {
 		tokenString := authHeader[len(BEARER_SCHEMA):]
 		middleware.token = tokenString
 		token, err := service.JWTAuthService().ValidateToken(middleware.token)
-		middleware.typeUser, middleware.id = service.JWTAuthService().TypeUser(middleware.token)
 
 		if err != nil {
 			ctx.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
-		if _, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-			returnAs(ctx, (service.ExistsToken(middleware.token)))
+
+		middleware.typeUser, middleware.id = service.JWTAuthService().TypeUser(token)
+		if middleware.typeUser != "" && middleware.id != "" {
+			returnAs(ctx, (service.ExistsToken(middleware.token, middleware.id)))
 		} else {
 			ctx.AbortWithStatus(http.StatusUnauthorized)
 			return
@@ -57,12 +61,19 @@ func (middleware *jwtServices) AuthorizeJWT() gin.HandlerFunc {
 	}
 }
 
+/*
+Revisa que la ruta que lo utiliza sea accedida sólo por el tipo de usuario indicado
+al inicializar el elemento de restricción
+*/
 func (middleware *jwtServices) OnlyUser() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		returnAs(ctx, (middleware.espectedUser == middleware.typeUser))
 	}
 }
 
+/*
+Según el valor recibido por una condición elige si continuar ó abortar la función de restricción de acceso padre
+*/
 func returnAs(ctx *gin.Context, status bool) {
 	if status {
 		ctx.Next()
