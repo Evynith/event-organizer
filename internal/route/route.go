@@ -1,11 +1,12 @@
 package route
 
 import (
-	controller "main/internal/controller"
-	"main/internal/middleware"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
+	controller "main/internal/controller"
+	"main/internal/middleware"
 )
 
 func SetupRouter() *gin.Engine {
@@ -19,7 +20,7 @@ func SetupRouter() *gin.Engine {
 				"token": token,
 			})
 		} else {
-			ctx.JSON(http.StatusUnauthorized, "No se pudo crear acceso")
+			ctx.JSON(http.StatusUnauthorized, gin.H{"message": "Failed to create access"})
 		}
 	})
 

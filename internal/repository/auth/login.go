@@ -2,10 +2,11 @@ package auth_repository
 
 import (
 	"context"
-	"main/internal/database"
-	"main/internal/model"
 
 	"go.mongodb.org/mongo-driver/bson"
+
+	"main/internal/database"
+	"main/internal/model"
 )
 
 var collection = database.GetCollection("users")

@@ -1,15 +1,15 @@
 package main
 
 import (
-	r "main/internal/route"
-
 	"github.com/gin-gonic/gin"
+
+	router "main/internal/route"
 )
 
 func main() {
-	route := r.SetupRouter()
+	route := router.SetupRouter()
 	route.GET("", func(ctx *gin.Context) {
-		ctx.JSON(200, gin.H{"message": "funciona"})
+		ctx.JSON(200, gin.H{"message": "Welcome to API event-organizer"})
 	})
 	route.Run(":8000")
 }

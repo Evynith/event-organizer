@@ -1,15 +1,16 @@
 package controller
 
 import (
-	service "main/internal/service"
-
 	"github.com/gin-gonic/gin"
+
+	service "main/internal/service"
 )
 
 func Login(ctx *gin.Context) string {
 	var jwtService service.JWTService = service.JWTAuthService()
 	var token string = ""
 	user, password, hasAuth := ctx.Request.BasicAuth()
+
 	if !hasAuth {
 		return ""
 	}
@@ -17,6 +18,7 @@ func Login(ctx *gin.Context) string {
 	if isUserAuthenticated {
 		token = jwtService.GenerateToken(user)
 	}
+
 	service.SaveToken(user, token)
 
 	return token

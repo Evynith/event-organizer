@@ -1,9 +1,9 @@
-version: "3.9"
+version: "3.9" # specify docker-compose version
 services:
   server:
     container_name: event_server
     build: 
-      context: .
+      context: . # specify the directory of the Dockerfile
       dockerfile: Dockerfile
     ports:
       - 8000:8000
@@ -20,6 +20,8 @@ services:
     hostname: localhost
     ports:
       - 27000:27017
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./mongodb/database:/data/db
       - ./mongodb/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
@@ -30,10 +32,3 @@ services:
       - MONGO_INITDB_ROOT_USERNAME=root
       - MONGO_INITDB_ROOT_PASSWORD=root
     command: mongod
-
-# docker-compose build
-# docker run -p 8000:8000 event-organizer_server
-# docker-compose up -d --build
-# sudo docker exec -it mongodb mongosh organization
-# mongosh
-# docker rmi -f $(docker images -aq)

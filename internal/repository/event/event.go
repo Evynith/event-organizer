@@ -3,10 +3,10 @@ package repository
 import (
 	"context"
 
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
 	"main/internal/database"
 	model "main/internal/model"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var collection = database.GetCollection("event")

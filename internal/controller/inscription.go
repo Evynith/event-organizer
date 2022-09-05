@@ -2,90 +2,75 @@ package controller
 
 import (
 	"errors"
-	mi "main/internal/middleware"
-	"main/internal/model"
-	eventRepository "main/internal/repository/event"
-	inscriptionRepository "main/internal/repository/inscription"
-	"main/internal/service"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+
+	middleware "main/internal/middleware"
+	"main/internal/model"
+	eventRepository "main/internal/repository/event"
+	inscriptionRepository "main/internal/repository/inscription"
+	"main/internal/service"
 )
 
 type InscriptionControllerInterface interface {
-	PostInscription(c *gin.Context)
-	Inscriptions(c *gin.Context)
+	PostInscription(ctx *gin.Context)
+	Inscriptions(ctx *gin.Context)
 }
 
 type inscriptionController struct {
-	middle mi.JWTmiddleware
+	handler middleware.JWTmiddleware
 }
 
-func InscriptionControllerStart(j mi.JWTmiddleware) InscriptionControllerInterface {
+func InscriptionControllerStart(middle middleware.JWTmiddleware) InscriptionControllerInterface {
 	return &inscriptionController{
-		middle: j,
+		handler: middle,
 	}
 }
 
-func (i *inscriptionController) PostInscription(c *gin.Context) {
+func (i *inscriptionController) PostInscription(ctx *gin.Context) {
 	var newInscription model.Inscription
-	err := c.BindJSON(&newInscription)
+	bindJSON(ctx, &newInscription)
 	idEvent := newInscription.Event.Hex()
-	access := service.AccessDraft(i.middle.GetType())
+	access := service.AccessDraft(i.handler.GetType())
 	idOld := service.CreateFilterEvent(idEvent, access)
+
 	event, err := eventRepository.ReadOne(idOld)
+	inspectError(ctx, err)
 
 	if event.DateOfEvent < primitive.NewDateTimeFromTime(time.Now()) {
-		c.AbortWithError(http.StatusNotAcceptable, errors.New("This event as been finalized"))
-		return
-	}
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
+		ctx.AbortWithError(http.StatusNotAcceptable, errors.New("This event as been finalized"))
 		return
 	}
 
 	err = inscriptionRepository.Create(newInscription)
+	inspectError(ctx, err)
 
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-	c.IndentedJSON(http.StatusCreated, newInscription)
+	ctx.IndentedJSON(http.StatusCreated, newInscription)
 }
 
-func (i *inscriptionController) Inscriptions(c *gin.Context) {
+func (i *inscriptionController) Inscriptions(ctx *gin.Context) {
 	var newFilter model.Filter
-	if err := c.BindQuery(&newFilter); err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-	access := service.AccessDraft(i.middle.GetType())
+	var newInscription model.Inscription
+	var inscriptionsList []primitive.ObjectID
+	bindQuery(ctx, &newFilter)
+	bindJSON(ctx, &newInscription)
+
+	access := service.AccessDraft(i.handler.GetType())
 	filter := service.CreateFilterEvents(newFilter, []primitive.ObjectID{}, access)
 
-	var newInscription model.Inscription
-	err := c.BindJSON(&newInscription)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
 	inscriptions, err := inscriptionRepository.Read(newInscription.User)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-	var inscriptionsList []primitive.ObjectID
+	inspectError(ctx, err)
+
 	for _, inscriptionID := range inscriptions {
 		inscriptionsList = append(inscriptionsList, inscriptionID.Event)
 	}
 
 	filter = service.CreateFilterListOfEvent(filter, inscriptionsList)
-
 	events, err := eventRepository.Read(filter)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-	c.IndentedJSON(http.StatusOK, events)
+	inspectError(ctx, err)
+
+	ctx.IndentedJSON(http.StatusOK, events)
 }

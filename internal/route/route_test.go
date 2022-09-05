@@ -3,16 +3,15 @@ package route
 import (
 	"bytes"
 	"encoding/json"
-	"main/internal/model"
 	"net/http"
 	"net/http/httptest"
-
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
-
 	"go.mongodb.org/mongo-driver/bson/primitive"
+
+	"main/internal/model"
 )
 
 var tokens []string //0 user, 1 admin
@@ -99,9 +98,7 @@ func TestPostEvent(t *testing.T) {
 
 		if w.Code == http.StatusCreated {
 			idEvent, _ := searchElemInBody(w.Body.String(), "id")
-			t.Log("cree un evento", idEvent)
 			if idEvent != "" {
-				t.Log("guarde un evento", idEvent)
 				events = append(events, idEvent)
 			}
 		}

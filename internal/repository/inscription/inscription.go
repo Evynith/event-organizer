@@ -2,11 +2,12 @@ package repository
 
 import (
 	"context"
-	"main/internal/database"
-	model "main/internal/model"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+
+	"main/internal/database"
+	model "main/internal/model"
 )
 
 var collection = database.GetCollection("inscription")

@@ -1,11 +1,12 @@
 package middleware
 
 import (
-	service "main/internal/service"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
+
+	service "main/internal/service"
 )
 
 type JWTmiddleware interface {
@@ -34,26 +35,22 @@ func JWTServiceMiddleware(espected string) JWTmiddleware {
 }
 
 func (middleware *jwtServices) AuthorizeJWT() gin.HandlerFunc {
-	return func(c *gin.Context) {
+	return func(ctx *gin.Context) {
 		const BEARER_SCHEMA = "Bearer "
-		authHeader := c.GetHeader("Authorization")
+		authHeader := ctx.GetHeader("Authorization")
 		tokenString := authHeader[len(BEARER_SCHEMA):]
 		middleware.token = tokenString
 		token, err := service.JWTAuthService().ValidateToken(middleware.token)
 		middleware.typeUser, middleware.id = service.JWTAuthService().TypeUser(middleware.token)
+
 		if err != nil {
-			c.AbortWithStatus(http.StatusUnauthorized)
+			ctx.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 		if _, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-			if service.ExistsToken(middleware.token) {
-				c.Next()
-			} else {
-				c.AbortWithStatus(http.StatusUnauthorized)
-				return
-			}
+			returnAs(ctx, (service.ExistsToken(middleware.token)))
 		} else {
-			c.AbortWithStatus(http.StatusUnauthorized)
+			ctx.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 
@@ -61,12 +58,16 @@ func (middleware *jwtServices) AuthorizeJWT() gin.HandlerFunc {
 }
 
 func (middleware *jwtServices) OnlyUser() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		if middleware.espectedUser == middleware.typeUser {
-			c.Next()
-		} else {
-			c.AbortWithStatus(http.StatusUnauthorized)
-			return
-		}
+	return func(ctx *gin.Context) {
+		returnAs(ctx, (middleware.espectedUser == middleware.typeUser))
+	}
+}
+
+func returnAs(ctx *gin.Context, status bool) {
+	if status {
+		ctx.Next()
+	} else {
+		ctx.AbortWithStatus(http.StatusUnauthorized)
+		return
 	}
 }

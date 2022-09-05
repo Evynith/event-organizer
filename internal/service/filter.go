@@ -1,12 +1,13 @@
 package service
 
 import (
-	"main/internal/model"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/exp/slices"
+
+	"main/internal/model"
 )
 
 func AccessDraft(typeUser string) bool {
@@ -68,6 +69,7 @@ func CreateFilterEvents(filter model.Filter, ids []primitive.ObjectID, draft boo
 		}
 		fltr["$text"] = newSearch
 	}
+
 	if draft {
 		if filter.Status == "published" {
 			fltr["status"] = true
@@ -95,6 +97,8 @@ func CreateFilterEvents(filter model.Filter, ids []primitive.ObjectID, draft boo
 		}
 		fltr["date"] = newSearch
 	}
+
 	fltr = CreateFilterListOfEvent(fltr, ids)
+
 	return fltr
 }
